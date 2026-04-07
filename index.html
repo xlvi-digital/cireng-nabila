@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cireng Isi Nabila - Kasir Pro</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        /* CSS DASAR */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: #fdf2e9; color: #4a2c2a; padding: 15px; }
+        .container { max-width: 1000px; margin: auto; }
+        
+        header { text-align: center; margin-bottom: 30px; background: #e67e22; padding: 20px; border-radius: 15px; color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+
+        /* BUTTON REKAP UTAMA */
+        .rekap-container { margin-bottom: 20px; display: flex; justify-content: flex-end; }
+        .btn-rekap { padding: 12px 20px; background: #3498db; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.3s; }
+        .btn-rekap:hover { background: #2980b9; transform: scale(1.05); }
+
+        /* LAYOUT */
+        .main-layout { display: grid; grid-template-columns: 1fr 380px; gap: 20px; margin-bottom: 40px; }
+
+        @media (max-width: 850px) {
+            .main-layout { grid-template-columns: 1fr; }
+            .cart { order: -1; position: static; }
+        }
+
+        /* MENU GRID */
+        .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+        .menu-card { 
+            background: white; padding: 15px; border-radius: 12px; text-align: center; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); cursor: pointer; transition: 0.2s; border: 2px solid transparent;
+        }
+        .menu-card:hover { border-color: #e67e22; transform: translateY(-3px); }
+        .menu-card h4 { font-size: 0.95rem; margin-bottom: 5px; }
+        .menu-card p { color: #e67e22; font-weight: bold; font-size: 0.9rem; }
+
+        /* KERANJANG */
+        .cart { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); height: fit-content; position: sticky; top: 20px; }
+        .cart h2 { border-bottom: 2px solid #fdf2e9; padding-bottom: 10px; margin-bottom: 15px; }
+        
+        .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f9f9f9; }
+        .btn-delete-item { background: #ff7675; color: white; border: none; padding: 4px 8px; border-radius: 5px; cursor: pointer; font-size: 11px; }
+
+        .total-section { margin-top: 20px; border-top: 2px solid #eee; padding-top: 15px; }
+        .total-row { display: flex; justify-content: space-between; font-size: 1.3rem; font-weight: bold; margin-bottom: 15px; }
+        
+        #save-btn { width: 100%; padding: 15px; background: #27ae60; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+
+        /* RIWAYAT PESANAN */
+        .history-section { background: white; padding: 20px; border-radius: 15px; }
+        .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        
+        .history-card { 
+            background: #fff; border-left: 6px solid #ccc; padding: 15px; margin-bottom: 15px; 
+            border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); position: relative;
+        }
+        
+        .status-lunas { border-left-color: #27ae60 !important; background-color: #f0fff4; }
+        .status-belum { border-left-color: #e74c3c !important; background-color: #fff5f5; }
+
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
+        .badge-lunas { background: #27ae60; color: white; }
+        .badge-belum { background: #e74c3c; color: white; }
+
+        .btn-status { margin-top: 10px; padding: 6px 12px; border: 1px solid #ddd; border-radius: 5px; cursor: pointer; font-size: 0.8rem; background: white; }
+        .btn-hapus-riwayat { padding: 6px 12px; background: #e74c3c; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 0.8rem; }
+        .btn-hapus-single { position: absolute; top: 15px; right: 15px; background: none; border: none; color: #ccc; cursor: pointer; font-size: 1.2rem; }
+        .btn-hapus-single:hover { color: #e74c3c; }
+
+        .empty-text { color: #aaa; text-align: center; padding: 20px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Cireng Isi Nabila</h1>
+            <p>Sistem Kasir Pro - Manajemen Penjualan</p>
+        </header>
+
+        <div class="rekap-container">
+            <button class="btn-rekap" onclick="tampilkanRekap()">
+                📊 Lihat Rekap Penjualan
+            </button>
+        </div>
+        
+        <div class="main-layout">
+            <div class="menu-grid" id="menu-display"></div>
+
+            <div class="cart">
+                <h2>Pesanan Baru</h2>
+                <div id="cart-items"><p class="empty-text">Pilih menu...</p></div>
+                <div class="total-section">
+                    <div class="total-row">
+                        <span>Total:</span>
+                        <span>Rp <span id="total-price">0</span></span>
+                    </div>
+                    <button id="save-btn" onclick="simpanPesanan()">SIMPAN DATA</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="history-section">
+            <div class="history-header">
+                <h2>Riwayat Transaksi</h2>
+                <button class="btn-hapus-riwayat" onclick="bersihkanSemuaRiwayat()">Bersihkan Data</button>
+            </div>
+            <div id="history-display"></div>
+        </div>
+    </div>
+
+    <script>
+        const listMenu = [
+            { id: 1, nama: "Ayam ORI", harga: 2000 },
+            { id: 2, nama: "Ayam Pedas", harga: 2000 },
+            { id: 3, nama: "Jando Pedas", harga: 2000 },
+            { id: 4, nama: "Ati Ampela Pedas", harga: 2000 },
+            { id: 5, nama: "Baso Pedas", harga: 2000 },
+            { id: 6, nama: "Usus Pedas", harga: 2000 },
+            { id: 7, nama: "Kornet Pedas", harga: 2000 },
+            { id: 8, nama: "Kikil Pedas", harga: 2000 },
+            { id: 9, nama: "Abon", harga: 2000 },
+            { id: 10, nama: "Risol Mayo", harga: 2000 },
+            { id: 11, nama: "Risol Mayo Pedas", harga: 2000 },
+            { id: 12, nama: "Cukimi (Porsi)", harga: 10000 }
+        ];
+
+        let keranjang = [];
+        let dataRiwayat = JSON.parse(localStorage.getItem('riwayatNabila')) || [];
+
+        window.onload = () => {
+            renderMenu();
+            renderRiwayat();
+        };
+
+        function renderMenu() {
+            const menuDisplay = document.getElementById('menu-display');
+            listMenu.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'menu-card';
+                card.innerHTML = `<h4>${item.nama}</h4><p>Rp ${item.harga.toLocaleString()}</p>`;
+                card.onclick = () => tambahKeKeranjang(item);
+                menuDisplay.appendChild(card);
+            });
+        }
+
+        function tambahKeKeranjang(item) {
+            const existing = keranjang.find(p => p.id === item.id);
+            if (existing) existing.qty += 1;
+            else keranjang.push({ ...item, qty: 1 });
+            
+            const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1000, timerProgressBar: true });
+            Toast.fire({ icon: 'success', title: `${item.nama} ditambah` });
+            
+            renderKeranjang();
+        }
+
+        function renderKeranjang() {
+            const listEl = document.getElementById('cart-items');
+            const totalEl = document.getElementById('total-price');
+            let total = 0;
+            listEl.innerHTML = keranjang.length === 0 ? '<p class="empty-text">Pilih menu...</p>' : "";
+            
+            keranjang.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'cart-item';
+                div.innerHTML = `
+                    <span><strong>${item.nama}</strong> (x${item.qty})</span>
+                    <span>Rp ${(item.harga * item.qty).toLocaleString()} 
+                    <button class="btn-delete-item" onclick="hapusItemKeranjang(${item.id})">x</button></span>
+                `;
+                listEl.appendChild(div);
+                total += (item.harga * item.qty);
+            });
+            totalEl.innerText = total.toLocaleString();
+        }
+
+        function hapusItemKeranjang(id) {
+            keranjang = keranjang.filter(p => p.id !== id);
+            renderKeranjang();
+        }
+
+        function simpanPesanan() {
+            if (keranjang.length === 0) return Swal.fire('Oops!', 'Pilih menu dulu kak!', 'warning');
+
+            const pesananBaru = {
+                id: Date.now(),
+                detailItems: [...keranjang], // Simpan array asli untuk perhitungan rekap
+                total: keranjang.reduce((s, i) => s + (i.harga * i.qty), 0),
+                waktu: new Date().toLocaleString('id-ID'),
+                sudahBayar: false
+            };
+
+            dataRiwayat.unshift(pesananBaru);
+            localStorage.setItem('riwayatNabila', JSON.stringify(dataRiwayat));
+            keranjang = [];
+            renderKeranjang();
+            renderRiwayat();
+            Swal.fire({ icon: 'success', title: 'Tersimpan!', timer: 1000, showConfirmButton: false });
+        }
+
+        // FUNGSI REKAP KESELURUHAN
+        function tampilkanRekap() {
+            if (dataRiwayat.length === 0) return Swal.fire('Data Kosong', 'Belum ada data penjualan untuk direkap.', 'info');
+
+            let pendapatanTotal = 0;
+            let rekapMenu = {};
+
+            dataRiwayat.forEach(nota => {
+                pendapatanTotal += nota.total;
+                nota.detailItems.forEach(item => {
+                    if (rekapMenu[item.nama]) {
+                        rekapMenu[item.nama] += item.qty;
+                    } else {
+                        rekapMenu[item.nama] = item.qty;
+                    }
+                });
+            });
+
+            // Bangun Tabel HTML untuk Modal
+            let htmlRekap = `
+                <div style="text-align: left;">
+                    <h3 style="color: #27ae60; margin-bottom: 10px;">Total Pendapatan: Rp ${pendapatanTotal.toLocaleString('id-ID')}</h3>
+                    <hr>
+                    <p style="margin: 10px 0; font-weight: bold;">Rincian Terjual:</p>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr style="background: #f4f4f4;">
+                            <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Menu</th>
+                            <th style="padding: 8px; border: 1px solid #ddd; text-align: center;">Qty</th>
+                        </tr>
+            `;
+
+            for (const menu in rekapMenu) {
+                htmlRekap += `
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ddd;">${menu}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${rekapMenu[menu]}</td>
+                    </tr>
+                `;
+            }
+
+            htmlRekap += `</table></div>`;
+
+            Swal.fire({
+                title: '📊 Rekap Penjualan Keseluruhan',
+                html: htmlRekap,
+                confirmButtonText: 'Tutup',
+                width: '500px'
+            });
+        }
+
+        function toggleBayar(id) {
+            const index = dataRiwayat.findIndex(p => p.id === id);
+            if (index !== -1) {
+                dataRiwayat[index].sudahBayar = !dataRiwayat[index].sudahBayar;
+                localStorage.setItem('riwayatNabila', JSON.stringify(dataRiwayat));
+                renderRiwayat();
+            }
+        }
+
+        function hapusRiwayatTunggal(id) {
+            Swal.fire({
+                title: 'Hapus?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', text: 'Data akan hilang.'
+            }).then((res) => {
+                if (res.isConfirmed) {
+                    dataRiwayat = dataRiwayat.filter(p => p.id !== id);
+                    localStorage.setItem('riwayatNabila', JSON.stringify(dataRiwayat));
+                    renderRiwayat();
+                }
+            });
+        }
+
+        function bersihkanSemuaRiwayat() {
+            Swal.fire({
+                title: 'Bersihkan Semua?', icon: 'danger', showCancelButton: true, confirmButtonColor: '#d33'
+            }).then((res) => {
+                if (res.isConfirmed) {
+                    dataRiwayat = [];
+                    localStorage.removeItem('riwayatNabila');
+                    renderRiwayat();
+                }
+            });
+        }
+
+        function renderRiwayat() {
+            const historyDisplay = document.getElementById('history-display');
+            historyDisplay.innerHTML = dataRiwayat.length === 0 ? '<p class="empty-text">Belum ada riwayat.</p>' : "";
+
+            dataRiwayat.forEach((p, index) => {
+                const statusClass = p.sudahBayar ? 'status-lunas' : 'status-belum';
+                const badgeClass = p.sudahBayar ? 'badge-lunas' : 'badge-belum';
+                const itemsText = p.detailItems.map(i => `${i.nama} (x${i.qty})`).join(", ");
+
+                const card = document.createElement('div');
+                card.className = `history-card ${statusClass}`;
+                card.innerHTML = `
+                    <button class="btn-hapus-single" onclick="hapusRiwayatTunggal(${p.id})">&times;</button>
+                    <div style="display:flex; justify-content:space-between; padding-right: 30px;">
+                        <strong>Nota #${dataRiwayat.length - index}</strong>
+                        <span class="badge ${badgeClass}">${p.sudahBayar ? 'Lunas' : 'Belum Bayar'}</span>
+                    </div>
+                    <p style="font-size:0.85rem; color:#666; margin:5px 0">${p.waktu}</p>
+                    <p>Items: ${itemsText}</p>
+                    <p><strong>Total: Rp ${p.total.toLocaleString()}</strong></p>
+                    <button class="btn-status" onclick="toggleBayar(${p.id})">${p.sudahBayar ? 'Set Belum Bayar' : 'Set Lunas'}</button>
+                `;
+                historyDisplay.appendChild(card);
+            });
+        }
+    </script>
+</body>
+</html>
